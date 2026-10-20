@@ -9,6 +9,7 @@ import {
   updateBookingStatus,
   updateMyBooking,
   cancelMyBooking,
+  assignMechanic,
 } from "../controllers/booking.controller.js";
 
 const router = express.Router();
@@ -38,5 +39,6 @@ router.delete("/:id", cancelMyBooking);
 
 // Mengubah status booking, khusus admin
 router.patch("/:id/status", authorize("ADMIN"), updateBookingStatus);
-
+// Menugaskan Mechanic oleh admin
+router.patch("/:id/assign-mechanic", authorize("ADMIN"), assignMechanic);
 export default router;

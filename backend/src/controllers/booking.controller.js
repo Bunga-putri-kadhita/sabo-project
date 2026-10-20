@@ -671,3 +671,81 @@ export async function cancelMyBooking(req, res) {
     });
   }
 }
+
+// penugasan mechanic oleh admin
+
+export async function assignMechanic(req, res) {
+  try {
+    const bookingId = Number(req.params.id);
+    const mechanicId = Number(req.body.mechanicId);
+
+    if (
+      !Number.isInteger(bookingId) ||
+      bookingId <= 0 ||
+      !Number.isInteger(mechanicId) ||
+      mechanicId <= 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "ID booking atau ID mekanik tidak valid",
+      });
+    }
+
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+    });
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking tidak ditemukan",
+      });
+    }
+
+    if (booking.status !== "PENDING") {
+      return res.status(400).json({
+        success: false,
+        message: "Mekanik hanya bisa ditetapkan pada booking PENDING",
+      });
+    }
+
+    const mechanic = await prisma.mechanic.findUnique({
+      where: { id: mechanicId },
+    });
+
+    if (!mechanic || mechanic.statusAktif !== "AKTIF") {
+      return res.status(400).json({
+        success: false,
+        message: "Mekanik tidak ditemukan atau tidak aktif",
+      });
+    }
+
+    const updatedBooking = await prisma.booking.update({
+      where: { id: bookingId },
+      data: {
+        mechanicId: mechanicId,
+        status: "APPROVED",
+      },
+      include: {
+        vehicle: true,
+        mechanic: true,
+        bookingDetails: {
+          include: { service: true },
+        },
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Mekanik berhasil ditetapkan",
+      data: updatedBooking,
+    });
+  } catch (error) {
+    console.error("Assign mechanic error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Gagal menetapkan mekanik",
+    });
+  }
+}
