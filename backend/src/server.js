@@ -8,6 +8,8 @@ import mechanicRoutes from "./routes/mechanic.routes.js";
 import bookingRoutes from "./routes/booking.routes.js";
 import reviewRoutes from "./routes/review.routes.js";
 import chatRoutes from "./routes/chat.routes.js";
+import userRoutes from "./routes/user.routes.js";
+import paymentRoutes from "./routes/payment.routes.js";
 
 dotenv.config();
 
@@ -20,7 +22,7 @@ app.use(express.urlencoded({ extended: true }));
 app.get("/", (req, res) => {
   res.json({
     success: true,
-    message: "SABO API is running 🚗",
+    message: "API is running",
   });
 });
 
@@ -31,6 +33,8 @@ app.use("/api/mechanics", mechanicRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api", paymentRoutes);
 
 const PORT = process.env.PORT || 5000;
 

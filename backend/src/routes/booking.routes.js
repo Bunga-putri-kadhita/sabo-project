@@ -6,6 +6,7 @@ import { authorize } from "../middlewares/role.middleware.js";
 import {
   createBooking,
   getMyBookings,
+  getBookingById,
   updateBookingStatus,
   updateMyBooking,
   cancelMyBooking,
@@ -23,6 +24,9 @@ router.use(authenticate);
 
 // Melihat riwayat booking milik sendiri
 router.get("/", getMyBookings);
+
+// Melihat riwayat booking berdasarkan id
+router.get("/:id", getBookingById);
 
 // Membuat booking baru
 router.post("/", createBooking);

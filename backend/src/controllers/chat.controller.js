@@ -1,11 +1,13 @@
 import prisma from "../config/database.js";
 
 // Mengirim pesan pada booking
+
 export async function sendMessage(req, res) {
   try {
     const bookingId = Number(req.params.bookingId);
-    const { message, receiverId } = req.body;
+    const { message } = req.body;
 
+    // Validasi ID booking
     if (!Number.isInteger(bookingId) || bookingId <= 0) {
       return res.status(400).json({
         success: false,
@@ -13,6 +15,7 @@ export async function sendMessage(req, res) {
       });
     }
 
+    // Validasi pesan
     if (typeof message !== "string" || !message.trim()) {
       return res.status(400).json({
         success: false,
@@ -20,6 +23,7 @@ export async function sendMessage(req, res) {
       });
     }
 
+    // Cari booking
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
     });
@@ -32,7 +36,7 @@ export async function sendMessage(req, res) {
     }
 
     // Customer hanya boleh chat pada booking miliknya.
-    // Admin boleh menangani chat booking customer.
+    // Admin boleh menangani chat semua booking.
     if (req.user.role !== "ADMIN" && booking.userId !== req.user.id) {
       return res.status(403).json({
         success: false,
@@ -43,37 +47,55 @@ export async function sendMessage(req, res) {
     let targetReceiverId;
 
     if (req.user.role === "ADMIN") {
-      targetReceiverId = Number(receiverId);
-
-      if (targetReceiverId !== booking.userId) {
-        return res.status(400).json({
-          success: false,
-          message: "Penerima harus pemilik booking",
-        });
-      }
+      // Jika pengirim Admin, penerima adalah pemilik booking
+      targetReceiverId = booking.userId;
     } else {
-      // Pesan customer diarahkan ke admin.
-      // Untuk sementara, gunakan ID admin dari request.
-      targetReceiverId = Number(receiverId);
-
-      const receiver = await prisma.user.findUnique({
-        where: { id: targetReceiverId },
+      // Jika pengirim Customer, cari akun Admin otomatis
+      const admin = await prisma.user.findFirst({
+        where: {
+          role: "ADMIN",
+        },
+        select: {
+          id: true,
+        },
+        orderBy: {
+          id: "asc",
+        },
       });
 
-      if (!receiver || receiver.role !== "ADMIN") {
-        return res.status(400).json({
+      if (!admin) {
+        return res.status(503).json({
           success: false,
-          message: "Penerima harus akun admin yang valid",
+          message: "Admin belum tersedia",
         });
       }
+
+      targetReceiverId = admin.id;
     }
 
+    // Simpan pesan
     const chatMessage = await prisma.chatMessage.create({
       data: {
         bookingId,
         senderId: req.user.id,
         receiverId: targetReceiverId,
         message: message.trim(),
+      },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            role: true,
+          },
+        },
+        receiver: {
+          select: {
+            id: true,
+            name: true,
+            role: true,
+          },
+        },
       },
     });
 

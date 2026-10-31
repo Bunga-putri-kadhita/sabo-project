@@ -1,18 +1,14 @@
 import crypto from "node:crypto";
+import { Prisma } from "@prisma/client";
 import prisma from "../config/database.js";
 
-// ==================================================
 // 1. CREATE BOOKING
 // Membuat booking baru beserta detail layanan yang dipilih
-// ==================================================
 export async function createBooking(req, res) {
   try {
     // Ambil data dari request body
     const { vehicleId, serviceIds, bookingDate, bookingTime } = req.body;
-
-    // ----------------------------------------------
     // A. Validasi ID kendaraan
-    // ----------------------------------------------
     const parsedVehicleId = Number(vehicleId);
 
     if (!Number.isInteger(parsedVehicleId) || parsedVehicleId <= 0) {
@@ -22,11 +18,9 @@ export async function createBooking(req, res) {
       });
     }
 
-    // ----------------------------------------------
     // B. Validasi daftar layanan
     // Pastikan minimal satu layanan dipilih
     // dan semua ID layanan berupa bilangan positif
-    // ----------------------------------------------
     if (
       !Array.isArray(serviceIds) ||
       serviceIds.length === 0 ||
@@ -49,11 +43,9 @@ export async function createBooking(req, res) {
       });
     }
 
-    // ----------------------------------------------
     // C. Validasi format tanggal dan jam
     // Format tanggal: YYYY-MM-DD
     // Format jam: HH:mm
-    // ----------------------------------------------
     if (
       typeof bookingDate !== "string" ||
       !/^\d{4}-\d{2}-\d{2}$/.test(bookingDate) ||
@@ -81,11 +73,9 @@ export async function createBooking(req, res) {
       });
     }
 
-    // ----------------------------------------------
     // D. Cegah booking pada tanggal yang sudah lewat
     // Gunakan tanggal lokal server agar perbandingan
     // tidak mencampur tanggal lokal dan tanggal UTC
-    // ----------------------------------------------
     const sekarang = new Date();
 
     const tanggalHariIni =
@@ -100,9 +90,7 @@ export async function createBooking(req, res) {
       });
     }
 
-    // ----------------------------------------------
     // E. Cegah booking pada jam yang sudah lewat hari ini
-    // ----------------------------------------------
     const jamSekarang =
       `${String(sekarang.getHours()).padStart(2, "0")}:` +
       `${String(sekarang.getMinutes()).padStart(2, "0")}`;
@@ -114,11 +102,9 @@ export async function createBooking(req, res) {
       });
     }
 
-    // ----------------------------------------------
     // F. Validasi kepemilikan kendaraan
     // Customer hanya boleh menggunakan kendaraannya sendiri
     // req.user.id berasal dari middleware autentikasi
-    // ----------------------------------------------
     const vehicle = await prisma.vehicle.findFirst({
       where: {
         id: parsedVehicleId,
@@ -133,10 +119,8 @@ export async function createBooking(req, res) {
       });
     }
 
-    // ----------------------------------------------
     // G. Ambil data layanan dari database
     // Harga dan estimasi tidak boleh dipercaya dari client
-    // ----------------------------------------------
     const services = await prisma.service.findMany({
       where: {
         id: {
@@ -153,10 +137,8 @@ export async function createBooking(req, res) {
       });
     }
 
-    // ----------------------------------------------
     // H. Hitung total harga dan durasi layanan
     // Harga diambil dari database, bukan request body
-    // ----------------------------------------------
     const totalPrice = services.reduce(
       (total, service) => total + Number(service.harga),
       0,
@@ -167,10 +149,8 @@ export async function createBooking(req, res) {
       0,
     );
 
-    // ----------------------------------------------
     // I. Cek apakah tanggal dan jam sudah dipesan
     // Status aktif dianggap masih menggunakan slot
-    // ----------------------------------------------
     const bookingBentrok = await prisma.booking.findFirst({
       where: {
         bookingDate: date,
@@ -190,11 +170,9 @@ export async function createBooking(req, res) {
       });
     }
 
-    // ----------------------------------------------
     // J. Buat booking beserta detail layanan
     // Transaksi memastikan booking dan detailnya
     // dibuat bersama-sama
-    // ----------------------------------------------
     const booking = await prisma.$transaction(async (tx) => {
       return tx.booking.create({
         data: {
@@ -243,10 +221,8 @@ export async function createBooking(req, res) {
       });
     });
 
-    // ----------------------------------------------
     // K. Respons jika booking berhasil dibuat
     // HTTP 201 berarti resource baru berhasil dibuat
-    // ----------------------------------------------
     return res.status(201).json({
       success: true,
       message: "Booking berhasil dibuat",
@@ -267,21 +243,26 @@ export async function createBooking(req, res) {
   }
 }
 
-// ==================================================
 // 2. GET MY BOOKINGS
 // Menampilkan riwayat booking milik customer login
-// ==================================================
+
 export async function getMyBookings(req, res) {
   try {
-    // Ambil booking yang dimiliki oleh customer saat ini
-    const bookings = await prisma.booking.findMany({
-      where: {
-        userId: req.user.id,
-      },
+    // ADMIN dapat melihat seluruh booking.
+    // CUSTOMER hanya dapat melihat booking miliknya.
+    const where = req.user.role === "ADMIN" ? {} : { userId: req.user.id };
 
-      // Sertakan informasi kendaraan, mekanik,
-      // dan detail layanan setiap booking
+    const bookings = await prisma.booking.findMany({
+      where,
       include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
         vehicle: true,
         mechanic: true,
         bookingDetails: {
@@ -290,36 +271,30 @@ export async function getMyBookings(req, res) {
           },
         },
       },
-
-      // Tampilkan booking terbaru terlebih dahulu
       orderBy: {
         createdAt: "desc",
       },
     });
 
-    // Kirim riwayat booking
     return res.status(200).json({
       success: true,
-      message: "Riwayat booking berhasil diambil",
+      message: "Daftar booking berhasil diambil",
       data: bookings,
     });
   } catch (error) {
-    // Catat error untuk pemeriksaan di terminal
-    console.error("Get my bookings error:", error);
+    console.error("Get bookings error:", error);
 
-    // Kirim respons error kepada client
     return res.status(500).json({
       success: false,
-      message: "Terjadi kesalahan saat mengambil riwayat booking",
+      message: "Terjadi kesalahan saat mengambil daftar booking",
     });
   }
 }
 
-
 export async function updateBookingStatus(req, res) {
   try {
-    // Ambil ID booking dari URL
     const bookingId = Number(req.params.id);
+    const { status } = req.body;
 
     if (!Number.isInteger(bookingId) || bookingId <= 0) {
       return res.status(400).json({
@@ -328,11 +303,7 @@ export async function updateBookingStatus(req, res) {
       });
     }
 
-    // Ambil status baru dari request body
-    const { status } = req.body;
-
-    // Sesuaikan daftar ini dengan enum BookingStatus
-    const allowedStatuses = ["PENDING", "APPROVED", "DIPROSES", "SELESAI"];
+    const allowedStatuses = ["APPROVED", "DIPROSES", "SELESAI"];
 
     if (!allowedStatuses.includes(status)) {
       return res.status(400).json({
@@ -341,34 +312,139 @@ export async function updateBookingStatus(req, res) {
       });
     }
 
-    // Pastikan booking tersedia
-    const existingBooking = await prisma.booking.findUnique({
-      where: { id: bookingId },
+    const result = await prisma.$transaction(async (tx) => {
+      const booking = await tx.booking.findUnique({
+        where: { id: bookingId },
+      });
+
+      if (!booking) {
+        return {
+          error: true,
+          statusCode: 404,
+          message: "Booking tidak ditemukan",
+        };
+      }
+
+      // Tentukan perpindahan status yang diperbolehkan
+      const validTransition =
+        (booking.status === "PENDING" && status === "APPROVED") ||
+        (booking.status === "APPROVED" && status === "DIPROSES") ||
+        (booking.status === "DIPROSES" && status === "SELESAI");
+
+      if (!validTransition) {
+        return {
+          error: true,
+          statusCode: 400,
+          message: `Status tidak bisa diubah dari ${booking.status} menjadi ${status}`,
+        };
+      }
+
+      let settlementPayment = null;
+
+      // Sebelum booking DIPROSES, DP wajib sudah PAID
+      if (status === "DIPROSES") {
+        const dpPayment = await tx.payment.findUnique({
+          where: {
+            bookingId_type: {
+              bookingId,
+              type: "DP",
+            },
+          },
+        });
+
+        if (!dpPayment || dpPayment.status !== "PAID") {
+          return {
+            error: true,
+            statusCode: 400,
+            message: "Booking tidak bisa DIPROSES sebelum DP lunas",
+          };
+        }
+      }
+
+      // Saat booking SELESAI, periksa DP dan buat tagihan pelunasan
+      if (status === "SELESAI") {
+        const dpPayment = await tx.payment.findUnique({
+          where: {
+            bookingId_type: {
+              bookingId,
+              type: "DP",
+            },
+          },
+        });
+
+        if (!dpPayment || dpPayment.status !== "PAID") {
+          return {
+            error: true,
+            statusCode: 400,
+            message: "DP harus lunas sebelum booking diselesaikan",
+          };
+        }
+
+        const remainingAmount = new Prisma.Decimal(booking.totalPrice)
+          .minus(dpPayment.amount)
+          .toDecimalPlaces(2);
+
+        if (remainingAmount.lessThanOrEqualTo(0)) {
+          return {
+            error: true,
+            statusCode: 400,
+            message: "Tidak ada sisa pembayaran untuk ditagihkan",
+          };
+        }
+
+        settlementPayment = await tx.payment.create({
+          data: {
+            bookingId,
+            type: "PELUNASAN",
+            method: "CASH",
+            amount: remainingAmount,
+            status: "PENDING",
+          },
+        });
+      }
+
+      const updatedBooking = await tx.booking.update({
+        where: { id: bookingId },
+        data: { status },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+            },
+          },
+          vehicle: true,
+          mechanic: true,
+          bookingDetails: {
+            include: {
+              service: true,
+            },
+          },
+          payments: true,
+        },
+      });
+
+      return {
+        error: false,
+        booking: updatedBooking,
+        settlementPayment,
+      };
     });
 
-    if (!existingBooking) {
-      return res.status(404).json({
+    if (result.error) {
+      return res.status(result.statusCode).json({
         success: false,
-        message: "Booking tidak ditemukan",
+        message: result.message,
       });
     }
-
-    // Perbarui status booking
-    const updatedBooking = await prisma.booking.update({
-      where: { id: bookingId },
-      data: { status },
-      include: {
-        vehicle: true,
-        bookingDetails: {
-          include: { service: true },
-        },
-      },
-    });
 
     return res.status(200).json({
       success: true,
       message: "Status booking berhasil diperbarui",
-      data: updatedBooking,
+      data: result.booking,
+      settlementPayment: result.settlementPayment,
     });
   } catch (error) {
     console.error("Update booking status error:", error);
@@ -746,6 +822,73 @@ export async function assignMechanic(req, res) {
     return res.status(500).json({
       success: false,
       message: "Gagal menetapkan mekanik",
+    });
+  }
+}
+
+
+export async function getBookingById(req, res) {
+  try {
+    const bookingId = Number(req.params.id);
+
+    if (!Number.isInteger(bookingId) || bookingId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "ID booking tidak valid",
+      });
+    }
+
+    // Cari booking berdasarkan ID
+    const booking = await prisma.booking.findUnique({
+      where: {
+        id: bookingId,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
+        vehicle: true,
+        mechanic: true,
+        bookingDetails: {
+          include: {
+            service: true,
+          },
+        },
+        review: true,
+      },
+    });
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking tidak ditemukan",
+      });
+    }
+
+    // Customer hanya boleh melihat booking miliknya
+    if (req.user.role === "CUSTOMER" && booking.userId !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "Anda tidak memiliki akses ke booking ini",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Detail booking berhasil diambil",
+      data: booking,
+    });
+  } catch (error) {
+    console.error("Get booking detail error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Gagal mengambil detail booking",
     });
   }
 }
