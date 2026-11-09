@@ -1,32 +1,82 @@
-export default function AuthLayout({ title, subtitle, children }) {
+import { useEffect, useRef } from "react";
+import gsap from "gsap";
+import Logo from "../components/Logo";
+import GearDial from "../components/GearDial";
+
+export default function AuthLayout({ title, subtitle, nudge = 0, children }) {
+  const root = useRef(null);
+
+  // Masuk berurutan; dilewati bila pengguna memilih reduced motion
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const ctx = gsap.context(() => {
+      gsap.from("[data-in]", {
+        y: 22,
+        opacity: 0,
+        duration: 0.8,
+        ease: "power3.out",
+        stagger: 0.07,
+        clearProps: "all",
+      });
+      gsap.from("[data-dial]", {
+        rotation: -40,
+        opacity: 0,
+        duration: 1.2,
+        ease: "power3.out",
+        transformOrigin: "50% 50%",
+        clearProps: "all",
+      });
+    }, root);
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
-      {/* Panel kiri: hanya tampil di layar besar */}
-      <aside className="relative hidden flex-col justify-between bg-slate-900 p-12 text-white lg:flex">
-        <div className="text-2xl font-bold tracking-wide">
-          SABO<span className="text-amber-500">.</span>
-        </div>
-        <div>
-          <h2 className="max-w-md text-4xl font-bold leading-tight">
-            Booking servis lebih mudah, tanpa antre.
-          </h2>
-          <p className="mt-4 max-w-md text-slate-300">
-            Pilih layanan, tentukan jadwal, dan pantau status pengerjaan
-            kendaraanmu dari mana saja.
+    <div ref={root} className="grid min-h-svh lg:grid-cols-[1.05fr_1fr]">
+      <a href="#utama" className="skip-link">
+        Lewati ke formulir
+      </a>
+
+      <aside className="relative hidden overflow-hidden bg-night p-12 text-white lg:flex lg:flex-col lg:justify-between lg:gap-8 xl:p-16">
+        <Logo variant="light" />
+
+        <div className="relative my-auto">
+          <p className="font-mono text-xs tracking-[0.18em] text-amber">
+            ALUR BOOKING
           </p>
+          <h2 className="font-display mt-4 max-w-[12ch] text-[clamp(3rem,min(6.5vw,11vh),6.5rem)] leading-[0.88] font-extrabold uppercase">
+            Satu putaran, satu status.
+          </h2>
+          <div
+            data-dial
+            className="mx-auto mt-8 w-full max-w-[min(22rem,34vh)]"
+          >
+            <GearDial nudge={nudge} />
+          </div>
         </div>
-        <p className="text-sm text-slate-400">Smart Auto Booking Online</p>
+
+        <p className="text-sm text-slate-400">
+          Smart Auto Booking Online. Panel Admin dan Kasir.
+        </p>
       </aside>
 
-      {/* Panel kanan: form */}
-      <main className="flex items-center justify-center bg-slate-50 px-4 py-10 sm:px-8">
-        <div className="w-full max-w-md">
-          <div className="mb-8 text-2xl font-bold text-slate-900 lg:hidden">
-            SABO<span className="text-amber-500">.</span>
+      <main
+        id="utama"
+        className="flex items-center justify-center bg-ground px-5 py-10 sm:px-10"
+      >
+        <div className="w-full max-w-[26rem]">
+          <div data-in className="mb-10 lg:hidden">
+            <Logo variant="dark" />
           </div>
-          <h1 className="text-3xl font-bold text-slate-900">{title}</h1>
-          <p className="mt-2 text-slate-500">{subtitle}</p>
-          <div className="mt-8">{children}</div>
+          <h1
+            data-in
+            className="font-display text-[clamp(2.6rem,5vw,3.6rem)] leading-[0.92] font-extrabold uppercase"
+          >
+            {title}
+          </h1>
+          <p data-in className="mt-4 text-muted">
+            {subtitle}
+          </p>
+          <div className="mt-9">{children}</div>
         </div>
       </main>
     </div>

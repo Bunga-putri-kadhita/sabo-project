@@ -6,12 +6,15 @@ import {
   useState,
 } from "react";
 import api from "../services/api";
+import { isStaff } from "../utils/roles";
 
 const AuthContext = createContext(null);
 
+// Hanya sesi ADMIN/KASIR yang dianggap valid di web
 function readStoredUser() {
   try {
-    return JSON.parse(localStorage.getItem("user"));
+    const stored = JSON.parse(localStorage.getItem("user"));
+    return stored && isStaff(stored.role) ? stored : null;
   } catch {
     return null;
   }
@@ -37,8 +40,13 @@ export function AuthProvider({ children }) {
     api
       .get("/auth/me")
       .then((res) => {
-        setUser(res.data.data);
-        localStorage.setItem("user", JSON.stringify(res.data.data));
+        const me = res.data.data;
+        if (!isStaff(me.role)) {
+          clearSession();
+          return;
+        }
+        setUser(me);
+        localStorage.setItem("user", JSON.stringify(me));
       })
       .catch((error) => {
         // Hanya logout kalau token ditolak, bukan karena backend sedang mati
@@ -56,19 +64,23 @@ export function AuthProvider({ children }) {
   async function login(email, password) {
     const res = await api.post("/auth/login", { email, password });
     const { user: loggedInUser, token } = res.data.data;
+
+    // Akun customer ditolak sebelum token disimpan
+    if (!isStaff(loggedInUser.role)) {
+      throw new Error(
+        "Akun customer hanya bisa digunakan di aplikasi mobile SABO.",
+      );
+    }
+
     localStorage.setItem("token", token);
     localStorage.setItem("user", JSON.stringify(loggedInUser));
     setUser(loggedInUser);
     return loggedInUser;
   }
 
-  async function register({ name, email, phone, password }) {
-    await api.post("/auth/register", { name, email, phone, password });
-  }
-
   return (
     <AuthContext.Provider
-      value={{ user, loading, login, register, logout: clearSession }}
+      value={{ user, loading, login, logout: clearSession }}
     >
       {children}
     </AuthContext.Provider>

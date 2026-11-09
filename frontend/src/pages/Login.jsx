@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import AuthLayout from "../layouts/AuthLayout";
 import TextField from "../components/TextField";
@@ -9,7 +9,6 @@ import { homeByRole } from "../utils/roles";
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
@@ -48,24 +47,20 @@ export default function Login() {
 
   return (
     <AuthLayout
-      title="Masuk"
-      subtitle="Selamat datang kembali. Masuk untuk melanjutkan."
+      title="Masuk Dashboard Bengkel"
+      subtitle="Khusus Admin dan Kasir. Masuk untuk melanjutkan."
+      nudge={form.email.length + form.password.length}
     >
-      {location.state?.registered && (
-        <div className="mb-5 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-          Pendaftaran berhasil, silakan masuk.
-        </div>
-      )}
       {apiError && (
         <div
           role="alert"
-          className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          className="mb-5 border-l-[3px] border-danger bg-red-50 px-4 py-3 text-sm text-danger"
         >
           {apiError}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+      <form data-in onSubmit={handleSubmit} className="space-y-6" noValidate>
         <TextField
           id="email"
           name="email"
@@ -91,7 +86,7 @@ export default function Login() {
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
-              className="text-sm font-medium text-slate-500 hover:text-slate-900"
+              className="rounded px-1 py-1 text-sm font-medium text-muted underline decoration-line underline-offset-4 transition-colors hover:text-ink hover:decoration-amber"
             >
               {showPassword ? "Sembunyikan" : "Tampilkan"}
             </button>
@@ -100,20 +95,17 @@ export default function Login() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full rounded-xl bg-amber-500 px-4 py-3 text-base font-semibold text-slate-900 transition hover:bg-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 disabled:cursor-not-allowed disabled:opacity-60"
+          className="btn-primary flex w-full items-center justify-between rounded-lg px-5 py-4 text-base font-semibold disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {submitting ? "Memproses..." : "Masuk"}
+          <span>{submitting ? "Memproses..." : "Masuk"}</span>
+          <span className="arrow" aria-hidden="true">
+            →
+          </span>
         </button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-slate-600">
-        Belum punya akun?{" "}
-        <Link
-          to="/register"
-          className="font-semibold text-slate-900 underline decoration-amber-500 underline-offset-4"
-        >
-          Daftar
-        </Link>
+      <p data-in className="mt-8 text-sm text-muted">
+        Pelanggan? Gunakan aplikasi mobile SABO.
       </p>
     </AuthLayout>
   );
