@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
-import Logo from "../components/Logo";
+import Logo from "../components/logo.jsx";
 import GearDial from "../components/GearDial";
 
 export default function AuthLayout({ title, subtitle, nudge = 0, children }) {

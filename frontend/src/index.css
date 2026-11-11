@@ -26,6 +26,8 @@ html { font-family: var(--font-sans); color: var(--color-ink); background: var(-
 body { margin: 0; -webkit-font-smoothing: antialiased; }
 ::selection { background: var(--color-amber); color: var(--color-night); }
 :focus-visible { outline: 2px solid var(--color-amber); outline-offset: 3px; border-radius: 6px; }
+/* BARU: kolom isian memakai garis bawah amber sebagai penanda fokus, bukan outline */
+input:focus-visible, textarea:focus-visible { outline: none; }
 
 .font-display { letter-spacing: -0.01em; }
 .tnum { font-variant-numeric: tabular-nums; }
@@ -66,3 +68,22 @@ body { margin: 0; -webkit-font-smoothing: antialiased; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: .01ms !important; animation: none !important; }
 }
+
+/* ===== BARU: Dialog, toast, baris tabel ===== */
+@keyframes pop-in { from { opacity: 0; transform: translateY(16px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+.anim-pop { animation: pop-in .4s var(--ease-ratchet) both; }
+.anim-fade { animation: fade-in .25s ease both; }
+
+/* Baris tabel: penanda amber tumbuh saat disorot (dipasang di sel pertama agar layout tabel tidak bergeser) */
+.row { transition: background-color .25s var(--ease-ratchet); }
+.row > :first-child { position: relative; }
+.row > :first-child::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--color-amber);
+  transform: scaleY(0); transition: transform .35s var(--ease-ratchet);
+}
+@media (hover: hover) {
+  .row:hover { background: color-mix(in srgb, var(--color-ground) 70%, white); }
+  .row:hover > :first-child::before { transform: scaleY(1); }
+}
+.row:focus-within > :first-child::before { transform: scaleY(1); }

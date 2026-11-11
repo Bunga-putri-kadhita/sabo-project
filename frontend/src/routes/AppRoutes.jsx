@@ -7,6 +7,8 @@ import FullPageLoader from "../components/FullPageLoader";
 import StaffLayout from "../layouts/StaffLayout";
 import Login from "../pages/Login";
 import PlaceholderPage from "../pages/PlaceholderPage";
+import Services from "../pages/Services";
+import Mechanics from "../pages/Mechanics";
 
 // Alamat "/" mengarahkan ke beranda sesuai role, atau ke login jika belum masuk.
 function RootRedirect() {
@@ -54,38 +56,8 @@ export default function AppRoutes() {
               />
             }
           />
-          <Route
-            path="services"
-            element={
-              <PlaceholderPage
-                title="Kelola Layanan"
-                description="Tambah, ubah, dan hapus layanan servis."
-                access="ADMIN (tambah, ubah, hapus)"
-                endpoints={[
-                  "GET /api/services",
-                  "POST /api/services",
-                  "PUT /api/services/:id",
-                  "DELETE /api/services/:id",
-                ]}
-              />
-            }
-          />
-          <Route
-            path="mechanics"
-            element={
-              <PlaceholderPage
-                title="Kelola Mekanik"
-                description="Tambah, ubah, hapus mekanik dan atur status aktif."
-                access="ADMIN (tambah, ubah, hapus)"
-                endpoints={[
-                  "GET /api/mechanics",
-                  "POST /api/mechanics",
-                  "PUT /api/mechanics/:id",
-                  "DELETE /api/mechanics/:id",
-                ]}
-              />
-            }
-          />
+          <Route path="services" element={<Services />} />
+          <Route path="mechanics" element={<Mechanics />} />
           <Route
             path="payments"
             element={
@@ -135,28 +107,8 @@ export default function AppRoutes() {
               />
             }
           />
-          <Route
-            path="services"
-            element={
-              <PlaceholderPage
-                title="Layanan"
-                description="Daftar layanan dan harga (hanya lihat)."
-                access="KASIR hanya melihat"
-                endpoints={["GET /api/services"]}
-              />
-            }
-          />
-          <Route
-            path="mechanics"
-            element={
-              <PlaceholderPage
-                title="Mekanik"
-                description="Daftar mekanik dan statusnya (hanya lihat)."
-                access="KASIR hanya melihat"
-                endpoints={["GET /api/mechanics"]}
-              />
-            }
-          />
+          <Route path="services" element={<Services />} />
+          <Route path="mechanics" element={<Mechanics />} />
         </Route>
       </Route>
 
