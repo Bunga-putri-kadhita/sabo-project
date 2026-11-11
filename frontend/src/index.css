@@ -1,0 +1,89 @@
+@import "@fontsource-variable/big-shoulders-display";
+@import "@fontsource-variable/instrument-sans";
+@import "@fontsource-variable/jetbrains-mono";
+@import "tailwindcss";
+
+@theme {
+  --color-night: #0f172a;
+  --color-night-2: #1b2540;
+  --color-ground: #f6f5f1;
+  --color-card: #ffffff;
+  --color-ink: #0f172a;
+  --color-muted: #5b6477;
+  --color-line: #e7e5e0;
+  --color-amber: #f59e0b;
+  --color-amber-deep: #b45309;
+  --color-danger: #b91c1c;
+
+  --font-display: "Big Shoulders Display Variable", "Arial Narrow", sans-serif;
+  --font-sans: "Instrument Sans Variable", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+
+  --ease-ratchet: cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+html { font-family: var(--font-sans); color: var(--color-ink); background: var(--color-ground); }
+body { margin: 0; -webkit-font-smoothing: antialiased; }
+::selection { background: var(--color-amber); color: var(--color-night); }
+:focus-visible { outline: 2px solid var(--color-amber); outline-offset: 3px; border-radius: 6px; }
+/* BARU: kolom isian memakai garis bawah amber sebagai penanda fokus, bukan outline */
+input:focus-visible, textarea:focus-visible { outline: none; }
+
+.font-display { letter-spacing: -0.01em; }
+.tnum { font-variant-numeric: tabular-nums; }
+
+/* Tombol utama: lapisan navy naik dari bawah */
+.btn-primary {
+  position: relative; overflow: hidden; isolation: isolate;
+  background: var(--color-amber); color: var(--color-night);
+  transition: color .45s var(--ease-ratchet), transform .2s var(--ease-ratchet);
+}
+.btn-primary::before {
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  background: var(--color-night); transform: translateY(101%);
+  transition: transform .45s var(--ease-ratchet);
+}
+.btn-primary > .arrow { transition: transform .45s var(--ease-ratchet); display: inline-block; }
+@media (hover: hover) {
+  .btn-primary:hover:not(:disabled) { color: var(--color-amber); }
+  .btn-primary:hover:not(:disabled)::before { transform: translateY(0); }
+  .btn-primary:hover:not(:disabled) > .arrow { transform: translateX(5px); }
+}
+.btn-primary:focus-visible { color: var(--color-amber); }
+.btn-primary:focus-visible::before { transform: translateY(0); }
+.btn-primary:active:not(:disabled) { transform: scale(.985); }
+
+/* Item menu: penanda amber */
+.nav-item { position: relative; transition: color .3s var(--ease-ratchet), background-color .3s var(--ease-ratchet), padding .3s var(--ease-ratchet); }
+.nav-item::before {
+  content: ""; position: absolute; left: 0; top: 20%; bottom: 20%; width: 3px; border-radius: 2px;
+  background: var(--color-amber); transform: scaleY(0); transition: transform .35s var(--ease-ratchet);
+}
+.nav-item[aria-current="page"]::before { transform: scaleY(1); }
+@media (hover: hover) { .nav-item:not([aria-current="page"]):hover::before { transform: scaleY(.45); } }
+
+.skip-link { position: absolute; left: 1rem; top: -4rem; z-index: 100; background: var(--color-amber); color: var(--color-night); padding: .6rem 1rem; border-radius: .5rem; font-weight: 600; transition: top .2s; }
+.skip-link:focus { top: 1rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: .01ms !important; animation: none !important; }
+}
+
+/* ===== BARU: Dialog, toast, baris tabel ===== */
+@keyframes pop-in { from { opacity: 0; transform: translateY(16px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+.anim-pop { animation: pop-in .4s var(--ease-ratchet) both; }
+.anim-fade { animation: fade-in .25s ease both; }
+
+/* Baris tabel: penanda amber tumbuh saat disorot (dipasang di sel pertama agar layout tabel tidak bergeser) */
+.row { transition: background-color .25s var(--ease-ratchet); }
+.row > :first-child { position: relative; }
+.row > :first-child::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--color-amber);
+  transform: scaleY(0); transition: transform .35s var(--ease-ratchet);
+}
+@media (hover: hover) {
+  .row:hover { background: color-mix(in srgb, var(--color-ground) 70%, white); }
+  .row:hover > :first-child::before { transform: scaleY(1); }
+}
+.row:focus-within > :first-child::before { transform: scaleY(1); }
