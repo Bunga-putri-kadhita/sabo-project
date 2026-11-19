@@ -140,12 +140,12 @@ export default function GearDial({ nudge = 0 }) {
               className={`block h-px origin-left transition-all duration-500 ${i <= step ? "w-full bg-amber" : "w-full bg-white/15"}`}
             />
             <span
-              className={`mt-3 block font-mono text-[0.65rem] tracking-wider transition-colors duration-500 ${i === step ? "text-amber" : "text-slate-500"}`}
+              className={`mt-3 block font-mono text-[0.65rem] tracking-wider transition-colors duration-500 ${i === step ? "text-amber" : "text-slate-400"}`}
             >
               {String(i + 1).padStart(2, "0")}
             </span>
             <span
-              className={`block text-[0.8rem] transition-colors duration-500 ${i === step ? "text-white" : "text-slate-500"}`}
+              className={`block text-[0.8rem] transition-colors duration-500 ${i === step ? "text-white" : "text-slate-400"}`}
             >
               {s.label}
             </span>

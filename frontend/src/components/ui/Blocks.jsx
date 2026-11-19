@@ -42,7 +42,7 @@ export function SearchBox({ value, onChange, placeholder, label }) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-lg border border-line bg-card py-3 pr-4 pl-11 text-base outline-none transition-colors placeholder:text-slate-400 focus-visible:border-amber focus-visible:outline-none"
+        className="w-full rounded-lg border border-line bg-card py-3 pr-4 pl-11 text-base outline-none transition-colors placeholder:text-slate-500 focus-visible:border-amber focus-visible:outline-none"
       />
     </label>
   );

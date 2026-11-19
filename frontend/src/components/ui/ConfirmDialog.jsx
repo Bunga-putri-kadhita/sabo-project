@@ -7,6 +7,7 @@ export default function ConfirmDialog({
   note,
   error,
   confirmLabel = "Hapus",
+  tone = "danger",
   busy,
   onConfirm,
   onCancel,
@@ -41,7 +42,11 @@ export default function ConfirmDialog({
           type="button"
           onClick={onConfirm}
           disabled={busy}
-          className="rounded-lg bg-danger px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-red-800 disabled:opacity-60"
+          className={
+            tone === "danger"
+              ? "rounded-lg bg-danger px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-red-800 disabled:opacity-60"
+              : "btn-primary rounded-lg px-5 py-3 text-sm font-semibold disabled:opacity-60"
+          }
         >
           {busy ? "Memproses..." : confirmLabel}
         </button>

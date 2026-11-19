@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import { ChevronsLeft, ChevronsRight, X } from "lucide-react";
-import Logo from "./logo.jsx";
+import Logo from "./Logo";
 
 export default function Sidebar({
   items,

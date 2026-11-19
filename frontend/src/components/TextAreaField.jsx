@@ -14,7 +14,7 @@ export default function TextAreaField({ label, error, ...props }) {
           {...props}
           aria-invalid={error ? "true" : "false"}
           aria-describedby={errId}
-          className={`w-full resize-none border-0 border-b bg-transparent px-0 py-3 text-lg text-ink outline-none transition-colors placeholder:text-slate-400 focus-visible:outline-none ${
+          className={`w-full resize-none border-0 border-b bg-transparent px-0 py-3 text-lg text-ink outline-none transition-colors placeholder:text-slate-500 focus-visible:outline-none ${
             error ? "border-danger" : "border-slate-300 hover:border-slate-500"
           }`}
         />

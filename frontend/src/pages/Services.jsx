@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Info, Pencil, Trash2 } from "lucide-react";
 import { serviceApi } from "../services/catalog";
 import { useAuth } from "../context/AuthContext";
 import { getErrorMessage } from "../utils/error";
@@ -18,6 +18,20 @@ import ConfirmDialog from "../components/ui/ConfirmDialog";
 import { useToast } from "../components/ui/Toast";
 import TextField from "../components/TextField";
 import TextAreaField from "../components/TextAreaField";
+
+function Tile({ label, value, note }) {
+  return (
+    <div className="rounded-lg border border-line bg-card p-5">
+      <p className="font-mono text-[0.72rem] tracking-[0.14em] text-muted uppercase">
+        {label}
+      </p>
+      <p className="mt-3 font-mono text-2xl leading-none tnum sm:text-3xl">
+        {value}
+      </p>
+      {note && <p className="mt-3 truncate text-sm text-muted">{note}</p>}
+    </div>
+  );
+}
 
 const EMPTY_FORM = {
   namaLayanan: "",
@@ -54,6 +68,7 @@ export default function Services() {
     error: "",
   });
   const [query, setQuery] = useState("");
+  const [sort, setSort] = useState("TERBARU");
 
   // form tambah/ubah. editing: null = tutup, "new" = tambah, objek = ubah
   const [editing, setEditing] = useState(null);
@@ -95,11 +110,35 @@ export default function Services() {
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return state.items;
-    return state.items.filter((s) =>
-      `${s.namaLayanan} ${s.deskripsi ?? ""}`.toLowerCase().includes(q),
+    const list = q
+      ? state.items.filter((s) =>
+          `${s.namaLayanan} ${s.deskripsi ?? ""}`.toLowerCase().includes(q),
+        )
+      : [...state.items];
+    if (sort === "NAMA")
+      list.sort((a, b) => a.namaLayanan.localeCompare(b.namaLayanan, "id"));
+    else if (sort === "MURAH")
+      list.sort((a, b) => Number(a.harga) - Number(b.harga));
+    else if (sort === "MAHAL")
+      list.sort((a, b) => Number(b.harga) - Number(a.harga));
+    else if (sort === "CEPAT")
+      list.sort((a, b) => a.estimasiMenit - b.estimasiMenit);
+    else list.sort((a, b) => b.id - a.id);
+    return list;
+  }, [state.items, query, sort]);
+
+  // Ringkasan dihitung dari data layanan yang ada
+  const stats = useMemo(() => {
+    const items = state.items;
+    if (items.length === 0) return null;
+    const byPrice = [...items].sort(
+      (a, b) => Number(a.harga) - Number(b.harga),
     );
-  }, [state.items, query]);
+    const avg = Math.round(
+      items.reduce((n, i) => n + Number(i.estimasiMenit), 0) / items.length,
+    );
+    return { cheapest: byPrice[0], priciest: byPrice[byPrice.length - 1], avg };
+  }, [state.items]);
 
   function openForm(service) {
     setErrors({});
@@ -182,7 +221,7 @@ export default function Services() {
   const total = state.items.length;
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-7xl">
       <PageHead
         title="Kelola Layanan"
         subtitle={
@@ -193,18 +232,68 @@ export default function Services() {
         action={addButton}
       />
 
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      {!canEdit && (
+        <p className="mt-6 flex items-start gap-3 border-l-4 border-amber bg-amber/10 px-4 py-3.5 text-sm">
+          <Info
+            size={18}
+            className="mt-0.5 shrink-0 text-amber-deep"
+            aria-hidden="true"
+          />
+          <span>
+            <strong className="font-semibold">Mode lihat saja.</strong> Katalog
+            ini jadi acuan harga dan durasi saat melayani pelanggan. Tambah,
+            ubah, dan hapus layanan hanya bisa dilakukan Admin.
+          </span>
+        </p>
+      )}
+
+      <section
+        aria-label="Ringkasan layanan"
+        className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4"
+      >
+        <Tile
+          label="Total layanan"
+          value={state.status === "ready" ? total : "–"}
+          note="Terdaftar di katalog"
+        />
+        <Tile
+          label="Rata-rata durasi"
+          value={stats ? formatMenit(stats.avg) : "–"}
+          note="Estimasi per layanan"
+        />
+        <Tile
+          label="Termurah"
+          value={stats ? formatRupiah(stats.cheapest.harga) : "–"}
+          note={stats?.cheapest.namaLayanan}
+        />
+        <Tile
+          label="Termahal"
+          value={stats ? formatRupiah(stats.priciest.harga) : "–"}
+          note={stats?.priciest.namaLayanan}
+        />
+      </section>
+
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <SearchBox
           value={query}
           onChange={setQuery}
           placeholder="Cari layanan"
           label="Cari layanan"
         />
-        {state.status === "ready" && (
-          <p className="font-mono text-[0.7rem] tracking-[0.14em] text-muted uppercase tnum">
-            {total} layanan terdaftar
-          </p>
-        )}
+        <label className="flex items-center gap-2 text-sm text-muted">
+          Urutkan
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            className="rounded-lg border border-slate-300 bg-card px-3 py-2 text-sm text-ink outline-none focus-visible:border-amber"
+          >
+            <option value="TERBARU">Terbaru</option>
+            <option value="NAMA">Nama A sampai Z</option>
+            <option value="MURAH">Harga termurah</option>
+            <option value="MAHAL">Harga termahal</option>
+            <option value="CEPAT">Durasi tersingkat</option>
+          </select>
+        </label>
       </div>
 
       <div className="mt-4 overflow-hidden rounded-lg border border-line bg-card">
@@ -237,7 +326,7 @@ export default function Services() {
             {/* Desktop: tabel */}
             <table className="hidden w-full text-left md:table">
               <thead>
-                <tr className="border-b border-line font-mono text-[0.68rem] tracking-[0.14em] text-muted uppercase">
+                <tr className="border-b border-line font-mono text-[0.72rem] tracking-[0.14em] text-muted uppercase">
                   <th scope="col" className="px-6 py-4 font-medium">
                     Nama layanan
                   </th>
