@@ -12,6 +12,7 @@ import {
   uploadPaymentProof
 } from "../controllers/payment.controller.js";
 import upload from "../middlewares/upload.middleware.js";
+import { getDummyQris, simulateQrisPayment } from "../controllers/qris.controller.js";
 
 const router = express.Router();
 
@@ -40,6 +41,10 @@ router.post(
 
 // Customer, Admin, dan Kasir melihat riwayat pembayaran
 router.get("/bookings/:id/payments", getBookingPayments);
+
+// Customer mengambil QR dummy untuk pembayaran QRIS
+router.get("/payments/:paymentId/qris", getDummyQris);
+router.post("/payments/:paymentId/qris/simulate", authorize("CUSTOMER"), simulateQrisPayment);
 
 // Admin atau Kasir memverifikasi pembayaran transfer/tunai
 router.patch(
