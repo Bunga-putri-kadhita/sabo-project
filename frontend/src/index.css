@@ -12,7 +12,7 @@
   --color-muted: #5b6477;
   --color-line: #e7e5e0;
   --color-amber: #f59e0b;
-  --color-amber-deep: #b45309;
+  --color-amber-deep: #9a4a06;
   --color-danger: #b91c1c;
 
   --font-display: "Big Shoulders Display Variable", "Arial Narrow", sans-serif;
@@ -87,3 +87,25 @@ input:focus-visible, textarea:focus-visible { outline: none; }
   .row:hover > :first-child::before { transform: scaleY(1); }
 }
 .row:focus-within > :first-child::before { transform: scaleY(1); }
+/* Tautan nav: garis amber meluncur */
+.link-slide { position: relative; }
+.link-slide::after {
+  content: ""; position: absolute; left: .75rem; right: .75rem; bottom: .35rem; height: 2px;
+  background: var(--color-amber); transform: scaleX(0); transform-origin: left;
+  transition: transform .35s var(--ease-ratchet);
+}
+@media (hover: hover) { .link-slide:hover::after { transform: scaleX(1); } }
+.link-slide:focus-visible::after { transform: scaleX(1); }
+
+/* Tombol garis: isian amber naik dari bawah */
+.btn-outline { position: relative; overflow: hidden; isolation: isolate; transition: color .4s var(--ease-ratchet), border-color .4s var(--ease-ratchet); }
+.btn-outline::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; background: var(--color-amber);
+  transform: translateY(101%); transition: transform .4s var(--ease-ratchet);
+}
+@media (hover: hover) {
+  .btn-outline:hover { color: var(--color-night); border-color: var(--color-amber); }
+  .btn-outline:hover::before { transform: translateY(0); }
+}
+.btn-outline:focus-visible { color: var(--color-night); border-color: var(--color-amber); }
+.btn-outline:focus-visible::before { transform: translateY(0); }
