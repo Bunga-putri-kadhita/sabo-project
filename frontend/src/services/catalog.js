@@ -32,7 +32,7 @@ export const bookingApi = {
 // Pembayaran: respons memakai kunci "payments" (bukan "data"), sesuai backend
 export const paymentApi = {
   listByBooking: async (bookingId) =>
-    (await api.get(`/bookings/${bookingId}/payments`)).data.payments ?? [],
+    (await api.get(`/bookings/${bookingId}/payments`)).data.data ?? [],
   // ADMIN dan KASIR. QRIS ditolak backend (harus lewat payment gateway).
   verify: async (paymentId) =>
     (await api.patch(`/payments/${paymentId}/verify`)).data.payment,

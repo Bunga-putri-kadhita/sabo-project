@@ -23,13 +23,15 @@ export const bookingApi = {
 // Respons pembayaran memakai kunci "payments" / "payment", bukan "data".
 export const paymentApi = {
   list: async (bookingId) =>
-    (await api.get(`/bookings/${bookingId}/payments`)).data.payments ?? [],
+    (await api.get(`/bookings/${bookingId}/payments`)).data.data ?? [],
+
   payDp: async (bookingId, method) =>
     (await api.post(`/bookings/${bookingId}/payments/dp`, { method })).data
-      .payment,
+      .data,
+
   paySettlement: async (bookingId, method) =>
     (await api.post(`/bookings/${bookingId}/payments/settlement`, { method }))
-      .data.payment,
+      .data.data,
 };
 
 export const chatApi = {

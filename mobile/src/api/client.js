@@ -4,7 +4,7 @@ import { getToken } from "../storage";
 // HP tidak bisa pakai "localhost". Isi EXPO_PUBLIC_API_URL di file .env, contoh:
 // EXPO_PUBLIC_API_URL=http://192.168.1.10:5000/api
 export const API_URL =
-  process.env.EXPO_PUBLIC_API_URL || "http://localhost:5000/api";
+  process.env.EXPO_PUBLIC_API_URL || "http://172.20.100.225:5000/api";
 
 const api = axios.create({ baseURL: API_URL, timeout: 15000 });
 

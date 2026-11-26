@@ -165,6 +165,7 @@ model Payment {
 
   gatewayReference String?
   proofUrl         String?
+  rejectionReason String?
 
   verifiedById Int?
   verifiedAt   DateTime?

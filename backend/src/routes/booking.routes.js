@@ -2,11 +2,13 @@ import express from "express";
 
 import { authenticate } from "../middlewares/auth.middleware.js";
 import { authorize } from "../middlewares/role.middleware.js";
+import upload from "../middlewares/upload.middleware.js";
 
 import {
   createBooking,
   getMyBookings,
   getBookingById,
+  getBookingAvailability,
   updateBookingStatus,
   updateMyBooking,
   cancelMyBooking,
@@ -24,6 +26,9 @@ router.use(authenticate);
 
 // Melihat riwayat booking milik sendiri
 router.get("/", getMyBookings);
+
+// Melihat jadwal booking yang sudah terisi
+router.get("/availability", getBookingAvailability);
 
 // Melihat riwayat booking berdasarkan id
 router.get("/:id", getBookingById);

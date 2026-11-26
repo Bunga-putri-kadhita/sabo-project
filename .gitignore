@@ -17,4 +17,5 @@ build/
 # Editor
 .vscode/
 .idea/
-.DS_Store
+.DS_Store/backend/uploads/
+/backend/uploads/

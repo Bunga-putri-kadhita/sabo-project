@@ -38,5 +38,18 @@ export default function useLoad(loader, pollMs = 0) {
     setRefreshing(false);
   }, [run]);
 
-  return { ...state, refreshing, refresh, reload: run };
+  const setData = useCallback((data) => {
+    setState((prev) => ({
+      ...prev,
+      data,
+    }));
+  }, []);
+
+  return {
+    ...state,
+    refreshing,
+    refresh,
+    reload: run,
+    setData,
+  };
 }

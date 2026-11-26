@@ -246,11 +246,40 @@ export async function createBooking(req, res) {
 // 2. GET MY BOOKINGS
 // Menampilkan riwayat booking milik customer login
 
+
 export async function getMyBookings(req, res) {
   try {
-    // ADMIN dapat melihat seluruh booking.
+    const { status, search } = req.query;
+
+    const allowedStatuses = ["PENDING", "APPROVED", "DIPROSES", "SELESAI"];
+
+    if (status && !allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Filter status booking tidak valid",
+      });
+    }
+
+    // ADMIN dan KASIR dapat melihat semua booking.
     // CUSTOMER hanya dapat melihat booking miliknya.
-    const where = req.user.role === "ADMIN" ? {} : { userId: req.user.id };
+    const where = {
+      ...(req.user.role === "CUSTOMER" ? { userId: req.user.id } : {}),
+      ...(status ? { status } : {}),
+    };
+
+    // Pencarian berdasarkan kode booking, nama/email/telepon customer,
+    // atau nomor polisi kendaraan.
+    if (search?.trim()) {
+      const keyword = search.trim();
+
+      where.OR = [
+        { bookingCode: { contains: keyword } },
+        { user: { name: { contains: keyword } } },
+        { user: { email: { contains: keyword } } },
+        { user: { phone: { contains: keyword } } },
+        { vehicle: { platNomor: { contains: keyword } } },
+      ];
+    }
 
     const bookings = await prisma.booking.findMany({
       where,
@@ -270,6 +299,7 @@ export async function getMyBookings(req, res) {
             service: true,
           },
         },
+        payments: true,
       },
       orderBy: {
         createdAt: "desc",
@@ -287,6 +317,73 @@ export async function getMyBookings(req, res) {
     return res.status(500).json({
       success: false,
       message: "Terjadi kesalahan saat mengambil daftar booking",
+    });
+  }
+}
+
+
+export async function getBookingAvailability(req, res) {
+  try {
+    const { date: bookingDate } = req.query;
+
+    // Validasi format tanggal
+    if (
+      typeof bookingDate !== "string" ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(bookingDate)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Parameter date wajib menggunakan format YYYY-MM-DD",
+      });
+    }
+
+    const date = new Date(`${bookingDate}T00:00:00.000Z`);
+
+    // Pastikan tanggal benar-benar valid
+    if (
+      Number.isNaN(date.getTime()) ||
+      date.toISOString().slice(0, 10) !== bookingDate
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Tanggal booking tidak valid",
+      });
+    }
+
+    // Ambil slot yang sudah ditempati booking aktif
+    const bookings = await prisma.booking.findMany({
+      where: {
+        bookingDate: date,
+        status: {
+          in: ["PENDING", "APPROVED", "DIPROSES"],
+        },
+      },
+      select: {
+        bookingTime: true,
+      },
+      orderBy: {
+        bookingTime: "asc",
+      },
+    });
+
+    const occupiedSlots = [
+      ...new Set(bookings.map((booking) => booking.bookingTime)),
+    ];
+
+    return res.status(200).json({
+      success: true,
+      message: "Jadwal booking berhasil diambil",
+      data: {
+        date: bookingDate,
+        occupiedSlots,
+      },
+    });
+  } catch (error) {
+    console.error("Get booking availability error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Gagal mengambil ketersediaan jadwal booking",
     });
   }
 }
@@ -392,15 +489,15 @@ export async function updateBookingStatus(req, res) {
           };
         }
 
-        settlementPayment = await tx.payment.create({
-          data: {
-            bookingId,
-            type: "PELUNASAN",
-            method: "CASH",
-            amount: remainingAmount,
-            status: "PENDING",
-          },
-        });
+settlementPayment = await tx.payment.create({
+  data: {
+    bookingId,
+    type: "PELUNASAN",
+    method: null,
+    amount: remainingAmount,
+    status: "PENDING",
+  },
+});
       }
 
       const updatedBooking = await tx.booking.update({

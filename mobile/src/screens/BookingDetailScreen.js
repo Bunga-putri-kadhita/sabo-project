@@ -64,6 +64,8 @@ function PaySheet({ visible, onClose, kind, amount, bookingId, onDone }) {
   async function pay() {
     setBusy(true);
     setError("");
+    console.log("ID booking saat membuat pembayaran:", bookingId);
+    
     try {
       if (kind === "dp") await paymentApi.payDp(bookingId, method);
       else await paymentApi.paySettlement(bookingId, method);

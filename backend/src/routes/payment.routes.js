@@ -7,11 +7,22 @@ import {
   createSettlementPayment,
   getBookingPayments,
   verifyPayment,
+  getAllPayments,
+  rejectPayment,
+  uploadPaymentProof
 } from "../controllers/payment.controller.js";
+import upload from "../middlewares/upload.middleware.js";
 
 const router = express.Router();
 
 router.use(authenticate);
+
+// ADMIN dan KASIR melihat semua pembayaran
+router.get(
+  "/payments",
+  authorize("ADMIN", "KASIR"),
+  getAllPayments,
+);
 
 // Customer membuat tagihan DP
 router.post(
@@ -35,6 +46,18 @@ router.patch(
   "/payments/:paymentId/verify",
   authorize("ADMIN", "KASIR"),
   verifyPayment,
+);
+
+router.patch(
+  "/payments/:paymentId/reject",
+  authorize("ADMIN", "KASIR"),
+  rejectPayment,
+);
+
+router.post(
+  "/payments/:paymentId/proof",
+  upload.single("proof"),
+  uploadPaymentProof,
 );
 
 export default router;
