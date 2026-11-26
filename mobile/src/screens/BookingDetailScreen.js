@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
+import QRCode from "react-native-qrcode-svg";
 import {
   Banknote,
   Landmark,
@@ -67,9 +68,11 @@ function PaySheet({ visible, onClose, kind, amount, bookingId, onDone }) {
     console.log("ID booking saat membuat pembayaran:", bookingId);
     
     try {
-      if (kind === "dp") await paymentApi.payDp(bookingId, method);
-      else await paymentApi.paySettlement(bookingId, method);
-      onDone();
+      const payment =
+        kind === "dp"
+          ? await paymentApi.payDp(bookingId, method)
+          : await paymentApi.paySettlement(bookingId, method);
+      onDone(payment);
     } catch (e) {
       setError(errMsg(e, "Gagal membuat pembayaran."));
     } finally {
@@ -298,10 +301,52 @@ export default function BookingDetailScreen({ navigation, route }) {
     15000,
   );
   const [pay, setPay] = useState(null);
+  const [qrisPayment, setQrisPayment] = useState(null);
+  const [qrisData, setQrisData] = useState(null);
+  const [qrisError, setQrisError] = useState("");
+  const [qrisBusy, setQrisBusy] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    if (!qrisPayment?.id) {
+      setQrisData(null);
+      setQrisError("");
+      return undefined;
+    }
+    setQrisData(null);
+    setQrisError("");
+    paymentApi
+      .getQris(qrisPayment.id)
+      .then((result) => {
+        if (active) setQrisData(result);
+      })
+      .catch((e) => {
+        if (active) setQrisError(errMsg(e, "Gagal memuat QR pembayaran."));
+      });
+    return () => {
+      active = false;
+    };
+  }, [qrisPayment?.id]);
+
+  async function simulateQris() {
+    if (!qrisPayment?.id) return;
+    setQrisBusy(true);
+    setQrisError("");
+    try {
+      await paymentApi.simulateQris(qrisPayment.id);
+      setQrisPayment(null);
+      setQrisData(null);
+      await reload();
+    } catch (e) {
+      setQrisError(errMsg(e, "Simulasi pembayaran gagal."));
+    } finally {
+      setQrisBusy(false);
+    }
+  }
 
   const b = data?.booking;
   const payments = data?.payments ?? [];
@@ -533,8 +578,75 @@ export default function BookingDetailScreen({ navigation, route }) {
                   </View>
                 ) : null}
               </Card>
+
+              {qrisPayment ? (
+                <Card style={{ marginTop: 12, alignItems: "center" }}>
+                  <Text
+                    style={{
+                      fontFamily: font.bodyBold,
+                      fontSize: 17,
+                      color: colors.ink,
+                      marginBottom: 6,
+                    }}
+                  >
+                    QRIS SABO (SIMULASI)
+                  </Text>
+                  <Text
+                    style={{
+                      fontFamily: font.body,
+                      fontSize: 13,
+                      color: colors.muted,
+                      textAlign: "center",
+                      marginBottom: 14,
+                    }}
+                  >
+                    QR dummy untuk pengujian. Tidak menerima uang sungguhan.
+                  </Text>
+                  {qrisData?.qrPayload ? (
+                    <View style={{ padding: 12, backgroundColor: "#FFFFFF", borderRadius: 12 }}>
+                      <QRCode value={qrisData.qrPayload} size={210} />
+                    </View>
+                  ) : (
+                    <Text style={{ color: colors.muted, padding: 20 }}>
+                      {qrisError || "Menyiapkan QR..."}
+                    </Text>
+                  )}
+                  <Text
+                    style={{
+                      fontFamily: font.displayBlack,
+                      fontSize: 27,
+                      color: colors.ink,
+                      marginTop: 14,
+                    }}
+                  >
+                    {rupiah(qrisPayment.amount)}
+                  </Text>
+                  <ErrorBanner message={qrisError} />
+                  {qrisData?.simulationEnabled ? (
+                    <Button
+                      title="Simulasikan pembayaran berhasil"
+                      onPress={simulateQris}
+                      loading={qrisBusy}
+                      style={{ marginTop: 14, width: "100%" }}
+                    />
+                  ) : (
+                    <Text
+                      style={{
+                        fontFamily: font.body,
+                        fontSize: 12,
+                        color: colors.muted,
+                        textAlign: "center",
+                        marginTop: 12,
+                      }}
+                    >
+                      Mode simulasi belum diaktifkan pada server.
+                    </Text>
+                  )}
+                </Card>
+              ) : null}
+
             </>
-          ) : null}
+          ) : null}}
 
           <View style={{ marginTop: 20, gap: 10 }}>
             <Button
@@ -628,8 +740,11 @@ export default function BookingDetailScreen({ navigation, route }) {
         amount={pay === "dp" ? dpAmount : pelAmount}
         bookingId={id}
         onClose={() => setPay(null)}
-        onDone={() => {
+        onDone={(payment) => {
           setPay(null);
+          if (payment?.method === "QRIS" && payment?.status === "PENDING") {
+            setQrisPayment(payment);
+          }
           reload();
         }}
       />
