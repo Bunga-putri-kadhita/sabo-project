@@ -352,6 +352,15 @@ export default function BookingDetailScreen({ navigation, route }) {
   const payments = data?.payments ?? [];
   const dp = payments.find((p) => p.type === "DP");
   const pel = payments.find((p) => p.type === "PELUNASAN");
+
+  useEffect(() => {
+    if (qrisPayment) return;
+    const pendingQris = payments.find(
+      (payment) =>
+        payment.method === "QRIS" && payment.status === "PENDING",
+    );
+    if (pendingQris) setQrisPayment(pendingQris);
+  }, [payments, qrisPayment]);
   const total = Number(b?.totalPrice) || 0;
   const dpAmount = dp ? Number(dp.amount) : Math.round(total * 0.3);
   const pelAmount = pel ? Number(pel.amount) : total - Math.round(total * 0.3);
