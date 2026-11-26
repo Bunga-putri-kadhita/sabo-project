@@ -646,7 +646,7 @@ export default function BookingDetailScreen({ navigation, route }) {
               ) : null}
 
             </>
-          ) : null}}
+          ) : null}
 
           <View style={{ marginTop: 20, gap: 10 }}>
             <Button
