@@ -32,6 +32,12 @@ export const paymentApi = {
   paySettlement: async (bookingId, method) =>
     (await api.post(`/bookings/${bookingId}/payments/settlement`, { method }))
       .data.data,
+
+  getQris: async (paymentId) =>
+    (await api.get(`/payments/${paymentId}/qris`)).data.data,
+
+  simulateQris: async (paymentId) =>
+    (await api.post(`/payments/${paymentId}/qris/simulate`)).data.data,
 };
 
 export const chatApi = {
