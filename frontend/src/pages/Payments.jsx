@@ -149,8 +149,12 @@ function BookingSummary({ booking, items }) {
   );
 }
 
-function StatusPill({ status }) {
-  const s = STATUS[status] ?? STATUS.PENDING;
+function StatusPill({ status, type }) {
+  const baseStatus = STATUS[status] ?? STATUS.PENDING;
+  const s =
+    type === "DP" && status === "PAID"
+      ? { ...baseStatus, label: "DP Terbayar" }
+      : baseStatus;
   return (
     <span
       className={`inline-flex rounded-full px-3 py-1 font-mono text-xs whitespace-nowrap ${s.cls}`}
@@ -245,7 +249,7 @@ function PaymentList({ items, onVerify, linkable }) {
                 {formatWaktu(p.createdAt)}
               </td>
               <td className="px-4 py-4 align-top">
-                <StatusPill status={p.status} />
+                <StatusPill status={p.status} type={p.type} />
               </td>
               <td className="px-6 py-3 text-right align-top">
                 <Action p={p} onVerify={onVerify} />
@@ -434,7 +438,7 @@ export default function Payments() {
 
   const tabs = [
     ["PERLU", "Perlu verifikasi"],
-    ["PAID", "Lunas"],
+    ["PAID", "Sudah dibayar"],
     ["SEMUA", "Semua"],
   ];
 
@@ -631,7 +635,7 @@ export default function Payments() {
         title="Verifikasi pembayaran?"
         message={
           target
-            ? `${TYPE[target.type] ?? target.type} ${formatRupiah(target.amount)} (${target.method}) dari ${target.bk.customer} untuk ${target.bk.code} akan ditandai Lunas.`
+            ? `${TYPE[target.type] ?? target.type} ${formatRupiah(target.amount)} (${target.method}) dari ${target.bk.customer} untuk ${target.bk.code} akan ditandai sudah dibayar.`
             : ""
         }
         note="Pastikan uangnya sudah diterima. Tindakan ini tidak dapat dibatalkan."
