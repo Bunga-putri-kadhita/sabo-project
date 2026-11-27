@@ -309,7 +309,11 @@ export default function BookingDetail() {
             {payments.status === "ready" && payments.items.length > 0 && (
               <ul className="divide-y divide-line">
                 {payments.items.map((p) => {
-                  const ps = PAY_STATUS[p.status] ?? PAY_STATUS.PENDING;
+                  const baseStatus = PAY_STATUS[p.status] ?? PAY_STATUS.PENDING;
+                  const ps =
+                    p.type === "DP" && p.status === "PAID"
+                      ? { ...baseStatus, label: "DP Terbayar" }
+                      : baseStatus;
                   return (
                     <li
                       key={p.id}
