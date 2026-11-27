@@ -267,7 +267,7 @@ function PaymentList({ items, onVerify, linkable }) {
                 <p className="font-mono text-sm font-medium">{p.bk.code}</p>
                 <p className="text-sm text-muted">{p.bk.customer}</p>
               </div>
-              <StatusPill status={p.status} />
+              <StatusPill status={p.status} type={p.type} />
             </div>
             <p className="mt-3 flex flex-wrap justify-between gap-x-4 font-mono text-sm tnum">
               <span>
